@@ -257,17 +257,28 @@ export function Step4TimetableSetup({ draft, onChange }: Step4TimetableSetupProp
             />
           </div>
           <div className="sm:col-span-2">
-            <Select
-              label="Color"
-              value={subColor}
-              onChange={(e) => setSubColor(e.target.value)}
-            >
-              {SUBJECT_COLOR_PALETTE.map((c, i) => (
-                <option key={c} value={c}>
-                  Color {i + 1}
-                </option>
-              ))}
-            </Select>
+            <div className="space-y-1.5">
+              <span className="block text-sm font-medium text-[var(--text-muted)]">
+                Subject Color
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {SUBJECT_COLOR_PALETTE.map((swatch) => (
+                  <button
+                    key={swatch}
+                    type="button"
+                    onClick={() => setSubColor(swatch)}
+                    aria-label={`Select color ${swatch}`}
+                    aria-pressed={subColor === swatch}
+                    className={`h-7 w-7 rounded-full border-2 transition-transform ${
+                      subColor === swatch
+                        ? 'scale-110 border-[var(--text-main)] ring-2 ring-[var(--accent-primary)]/50'
+                        : 'border-[var(--border-subtle)] shadow-sm hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: swatch }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
           <div className="flex items-end sm:col-span-2">
             <Button
