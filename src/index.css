@@ -1,0 +1,356 @@
+@import "tailwindcss";
+
+:root {
+  /* Base colours */
+  --bg-app: #F7F5F2; /* Warm Oat Milk */
+  --bg-surface: #FDFCFB; /* Soft Chalk */
+  --bg-surface-hover: #F2ECE6;
+  --bg-surface-well: #F4EFEA;
+
+  /* Brand colour */
+  --primary: #6D3B6E; /* Royal Plum */
+  --primary-hover: #5A2F5B;
+  --primary-subtle: #F5EDF5;
+  --primary-glow: rgba(109, 59, 110, 0.12);
+  --secondary: #8E588F;
+
+  /* Text colours */
+  --text-main: #2E2320; /* Deep Espresso */
+  --text-emphasis: #221B19; /* Dark Cocoa */
+  --text-secondary: #786B66; /* Warm Taupe Text */
+
+  /* Borders */
+  --border-subtle: #E5DFD9; /* Warm Taupe Border */
+  --border-strong: #D5CCC4;
+
+  /* Semantic status backgrounds & accessible text colours */
+  --status-success: #1A5A38; /* Accessible dark green */
+  --status-success-bg: #E2F1E8; /* Present Green */
+  --status-warning: #7D4F00; /* Accessible dark amber */
+  --status-warning-bg: #FBF0D9; /* Late Amber */
+  --status-danger: #8E2323; /* Accessible dark red */
+  --status-danger-bg: #F9E2E2; /* Absent Red */
+  --status-excused: #582B73; /* Accessible dark purple */
+  --status-excused-bg: #EFE6F7; /* Excused Purple */
+
+  --scrollbar-thumb: #D5CCC4;
+  --scrollbar-thumb-hover: #B8ABA2;
+  --card-shadow: 0 1px 3px 0 rgba(46, 35, 32, 0.04), 0 1px 2px -1px rgba(46, 35, 32, 0.04);
+  --card-shadow-hover: 0 6px 16px -2px rgba(46, 35, 32, 0.08), 0 2px 4px -1px rgba(46, 35, 32, 0.04);
+  --color-scheme: light;
+}
+
+html.dark {
+  /* Base colours */
+  --bg-app: #221B19; /* Dark Cocoa */
+  --bg-surface: #2E2320; /* Deep Espresso */
+  --bg-surface-hover: #382C28;
+  --bg-surface-well: #281F1D;
+
+  /* Brand colour (accessible lighter plum on dark cocoa/espresso) */
+  --primary: #B67EB7;
+  --primary-hover: #C694C7;
+  --primary-subtle: rgba(182, 126, 183, 0.16);
+  --primary-glow: rgba(182, 126, 183, 0.22);
+  --secondary: #4D2C4E;
+
+  /* Text colours */
+  --text-main: #F7F5F2; /* Warm off-white */
+  --text-emphasis: #FFFFFF;
+  --text-secondary: #B0A39E; /* Warm Taupe secondary text */
+
+  /* Borders */
+  --border-subtle: #3F3430; /* Warm Taupe dark border */
+  --border-strong: #554540;
+
+  /* Semantic status backgrounds & accessible text colours */
+  --status-success: #75C99E;
+  --status-success-bg: rgba(46, 125, 91, 0.24);
+  --status-warning: #F3BF6E;
+  --status-warning-bg: rgba(178, 106, 0, 0.24);
+  --status-danger: #F28D85;
+  --status-danger-bg: rgba(200, 75, 49, 0.24);
+  --status-excused: #D9A8D9;
+  --status-excused-bg: rgba(109, 59, 110, 0.35);
+
+  --scrollbar-thumb: #453733;
+  --scrollbar-thumb-hover: #584742;
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.35);
+  --card-shadow-hover: 0 8px 20px -3px rgba(0, 0, 0, 0.5);
+  --color-scheme: dark;
+}
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: "Plus Jakarta Sans", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-bg-app: var(--bg-app);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-surface-hover: var(--bg-surface-hover);
+  --color-bg-surface-well: var(--bg-surface-well);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-secondary: var(--secondary);
+
+  --color-text-main: var(--text-main);
+  --color-text-emphasis: var(--text-emphasis);
+  --color-text-secondary: var(--text-secondary);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+
+  --color-status-success: var(--status-success);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-bg: var(--status-danger-bg);
+  --color-status-excused: var(--status-excused);
+  --color-status-excused-bg: var(--status-excused-bg);
+
+  --radius-card: 14px;
+  --radius-card-lg: 18px;
+  --radius-btn: 10px;
+  --radius-input: 10px;
+  --radius-modal: 18px;
+
+  /* Aliases for backwards compatibility with any remaining legacy classes */
+  --color-brand-primary: var(--primary);
+  --color-brand-primary-hover: var(--primary-hover);
+  --color-brand-secondary: var(--secondary);
+  --color-app-bg: var(--bg-app);
+  --color-card-bg: var(--bg-surface);
+  --color-inset-bg: var(--bg-surface-well);
+  --color-ink-main: var(--text-main);
+  --color-ink-muted: var(--text-secondary);
+}
+
+@layer base {
+  html {
+    color-scheme: light dark;
+  }
+
+  html,
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    overflow-x: hidden;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Animations */
+@keyframes bw-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bw-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes bw-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bw-modal-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+@keyframes bw-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bw-popover-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes bw-drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes bw-drawer-out {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes bw-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bw-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+
+@keyframes bw-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bw-animate-backdrop-in {
+  animation: bw-backdrop-in 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.bw-animate-backdrop-out {
+  animation: bw-backdrop-out 160ms ease-in forwards;
+}
+
+.bw-animate-modal-in {
+  animation: bw-modal-in 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.bw-animate-modal-out {
+  animation: bw-modal-out 160ms ease-in forwards;
+}
+
+.bw-animate-popover-in {
+  animation: bw-popover-in 160ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top right;
+}
+
+.bw-animate-popover-out {
+  animation: bw-popover-out 140ms ease-in forwards;
+  transform-origin: top right;
+}
+
+.bw-animate-drawer-in {
+  animation: bw-drawer-in 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.bw-animate-drawer-out {
+  animation: bw-drawer-out 180ms ease-in forwards;
+}
+
+.bw-animate-toast-in {
+  animation: bw-toast-in 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.bw-animate-toast-out {
+  animation: bw-toast-out 160ms ease-in forwards;
+}
+
+.bw-animate-view-in {
+  animation: bw-view-in 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Smooth CSS Grid Accordion */
+.bw-accordion {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 200ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease;
+}
+
+.bw-accordion[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.bw-accordion > div {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom Scrollbars matching the Warm Oat Milk & Royal Plum theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
