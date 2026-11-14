@@ -3,10 +3,7 @@ import { groqSmartImport } from '../../services/importers/groqDocumentIntelligen
 import { AlertCircle, Check, FileSpreadsheet, FileText, Trash2, Upload } from 'lucide-react';
 import { parseCsvFile, type TabularData } from '../../services/importers/csvParser';
 import { parseExcelFile } from '../../services/importers/excelParser';
-import {
-  parsePdfCalendarFile,
-  type ParsedCalendarDraft,
-} from '../../services/importers/pdfCalendarParser';
+import type { ParsedCalendarDraft } from '../../services/importers/pdfCalendarParser';
 import {
   guessCalendarColumnMapping,
   mapRowsToCalendarDrafts,
@@ -41,7 +38,6 @@ interface CalendarImportReviewProps {
 
 export function CalendarImportReview({ onConfirmImport }: CalendarImportReviewProps) {
   const [loading, setLoading] = useState(false);
-  const [useGroq, setUseGroq] = useState(false);
   const [aiWarnings,setAiWarnings] = useState<string[]>([]);
   const [progress, setProgress] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -94,21 +90,11 @@ export function CalendarImportReview({ onConfirmImport }: CalendarImportReviewPr
         setMapping(guessed);
         applyTabularMapping(data, guessed);
       } else if (lower.endsWith('.pdf')) {
-        if(useGroq){
-          const ai=await groqSmartImport(file,'calendar',setProgress);
-          setReviewRows(ai.calendar);setSelectedIds(new Set(ai.calendar.map(d=>d.id)));setAiWarnings(ai.warnings);
-          if(!ai.calendar.length)setErrorMsg('Groq found no valid academic events. Try local OCR or another PDF.');
-          return;
-        }
-        const result = await parsePdfCalendarFile(file, setProgress);
-        if (result.drafts.length === 0) {
-          setErrorMsg(
-            `Scanned ${result.rawLineCount} lines in PDF, but no recognizable date rows were detected. You can add events manually below.`,
-          );
-          return;
-        }
-        setReviewRows(result.drafts);
-        setSelectedIds(new Set(result.drafts.map((d) => d.id)));
+        const ai = await groqSmartImport(file, 'calendar', setProgress);
+        setReviewRows(ai.calendar);
+        setSelectedIds(new Set(ai.calendar.map(d => d.id)));
+        setAiWarnings(ai.warnings);
+        if (!ai.calendar.length) setErrorMsg('No valid academic events found. Check the PDF and try again.');
       } else {
         setErrorMsg('Unsupported file format. Please upload a .pdf, .csv, or .xlsx file.');
       }
@@ -201,7 +187,7 @@ export function CalendarImportReview({ onConfirmImport }: CalendarImportReviewPr
         </label>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-[var(--text-main)]"><input type="checkbox" checked={useGroq} onChange={e=>setUseGroq(e.target.checked)}/> Use Groq Vision intelligence for PDF (requires Supabase sign-in; document pages sent to Groq)</label>
+      <p className="text-xs text-[var(--text-muted)]">PDFs are analyzed with Groq AI. CSV and Excel files are parsed locally. Confirm class cancellations before importing.</p>
       {aiWarnings.map((w,i)=><p key={i} className="text-sm text-[var(--status-warning)]">Review: {w}</p>)}
       {progress && <p role="status" className="text-sm text-[var(--text-secondary)]">{progress}</p>}
       {errorMsg && (

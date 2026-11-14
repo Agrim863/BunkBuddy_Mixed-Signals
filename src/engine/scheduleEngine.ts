@@ -50,16 +50,9 @@ export function getBlockingCalendarEvent(
   dateIso: string,
 ): CalendarEvent | null {
   const covering = getCalendarEventsForDate(events, dateIso);
-  // Explicit teaching_day overrides only if no holiday/break/non-teaching event overrides,
-  // or if affectsClasses is true on holiday/break/non_teaching_day/cancelled_class/examination.
-  const blocking = covering.find(
-    (ev) =>
-      ev.affectsClasses ||
-      ev.eventType === 'official_holiday' ||
-      ev.eventType === 'semester_break' ||
-      ev.eventType === 'non_teaching_day' ||
-      ev.eventType === 'cancelled_class',
-  );
+  // Class cancellation is an explicit, reviewable event property.
+  // Never infer it from a category label alone.
+  const blocking = covering.find((ev) => ev.affectsClasses);
   return blocking ?? null;
 }
 

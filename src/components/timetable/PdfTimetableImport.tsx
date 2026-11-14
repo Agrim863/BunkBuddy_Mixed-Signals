@@ -1,15 +1,12 @@
 import { useMemo, useState } from 'react';
 import { groqSmartImport, type SmartTimetableSession } from '../../services/importers/groqDocumentIntelligence';
 import type { Subject } from '../../types/domain';
-import { readTimetablePdf, parseTimetablePage, type TimetablePdfPage } from '../../services/importers/pdfTimetableParser';
 import type { ParsedTimetableDraft } from '../../services/importers/timetableMapper';
 import { getWeekdayShortName } from '../../utils/weekdays';
 
 const minutes = (time:string) => { const [h,m]=time.split(':').map(Number); return h*60+m; };
-const groupPattern=/\bG\d+\b/gi;
 
 export function PdfTimetableImport({subjects,onConfirm}:{subjects:Subject[];onConfirm:(rows:ParsedTimetableDraft[])=>void}) {
- const [useGroq,setUseGroq]=useState(true);
  const [warnings,setWarnings]=useState<string[]>([]);
  const [sessions,setSessions]=useState<SmartTimetableSession[]>([]);
  const [groups,setGroups]=useState<string[]>([]);
@@ -25,34 +22,9 @@ export function PdfTimetableImport({subjects,onConfirm}:{subjects:Subject[];onCo
   if(!file)return;
   setBusy('Reading document');setError('');setWarnings([]);setSessions([]);setGroups([]);setGroup('');setReady(false);setFileName(file.name);
   try {
-   if(useGroq){
-    const result=await groqSmartImport(file,'timetable',setBusy);
-    setSessions(result.sessions);setGroups(result.groups);setGroup(result.groups.length===1?result.groups[0]!:'');setWarnings(result.warnings);
-    if(!result.sessions.length)setError('No valid sessions detected. Try the local PDF parser or check the document.');
-   }else{
-    const pages:TimetablePdfPage[]=await readTimetablePdf(file,setBusy);
-    if(pages.length!==1)throw new Error('Upload a single-page timetable PDF for your section.');
-    const page=pages[0]!;
-    const detected=[...new Set((page.text.match(groupPattern)||[]).map(g=>g.toUpperCase()))].sort((a,b)=>Number(a.slice(1))-Number(b.slice(1)));
-    const all=detected.length?detected:[''];
-    const byId=new Map<string,SmartTimetableSession>();
-    // The local parser is a fallback for selectable-text PDFs; it may not reliably identify merged cells.
-    for(const g of all){
-     const parsed=parseTimetablePage(page,g,subjects);
-     for(const row of parsed){
-      const key=[row.weekday,row.startTime,row.endTime,row.subjectCode,row.sessionType].join('|');
-      const existing=byId.get(key);
-      if(existing){if(g&&!existing.groups.includes(g))existing.groups.push(g);}
-      else byId.set(key,{draft:{...row,id:`local-${byId.size}`},groups:g?[g]:[]});
-     }
-    }
-    const mapped=[...byId.values()];
-    // Classes found in all groups are shared; only group-specific alternatives retain labels.
-    for(const item of mapped)if(detected.length&&item.groups.length===detected.length)item.groups=[];
-    setSessions(mapped);setGroups(detected);setGroup(detected.length===1?detected[0]!:'');
-    setWarnings(['Local coordinate extraction is experimental. Check weekday, time and lab group carefully.']);
-    if(!mapped.length)setError('No timetable sessions detected in selectable text. Try Groq Vision.');
-   }
+   const result=await groqSmartImport(file,'timetable',setBusy);
+   setSessions(result.sessions);setGroups(result.groups);setGroup(result.groups.length===1?result.groups[0]!:'');setWarnings(result.warnings);
+   if(!result.sessions.length)setError('No valid timetable sessions found. Check the source PDF and try again.');
    setReady(true);
   }catch(e){setError(e instanceof Error?e.message:'Unable to read PDF');}
   finally{setBusy('');}
@@ -63,7 +35,7 @@ export function PdfTimetableImport({subjects,onConfirm}:{subjects:Subject[];onCo
    <h4 className="text-sm font-semibold text-[var(--text-main)]">Intelligent PDF timetable import</h4>
    <p className="mt-1 text-xs text-[var(--text-muted)]">Upload a one-section PDF. BunkBuddy discovers lab groups automatically and lets you review every slot before saving.</p>
   </div>
-  <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]"><input type="checkbox" checked={useGroq} onChange={e=>setUseGroq(e.target.checked)} disabled={Boolean(busy)}/> Use Groq Vision for intelligent extraction (sends document image to Groq)</label>
+  <p className="text-xs text-[var(--text-muted)]">PDF pages are processed by Groq AI through your Supabase project. Review extracted times and groups before importing.</p>
   <label className="inline-block cursor-pointer rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-sm text-[var(--text-main)]">{busy||'Upload one-section timetable PDF'}<input type="file" accept=".pdf" disabled={Boolean(busy)} className="hidden" onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></label>
   {fileName&&<p className="text-xs text-[var(--text-muted)]">{fileName}</p>}
   {error&&<p role="alert" className="text-sm text-[var(--status-danger)]">{error}</p>}

@@ -63,8 +63,14 @@ export async function groqSmartImport(file:File,kind:SmartDocumentKind,onProgres
   if(kind==='calendar')for(const [j,row] of (Array.isArray(payload.events)?payload.events:[]).entries()){
    if(!iso(row.date)||typeof row.title!=='string'||!row.title.trim())continue;
    const type:CalendarEventType=allowedEvents.has(row.eventType)?row.eventType:'college_event';
-   const ambiguous=type==='college_event'||type==='examination';
-   result.calendar.push({id:`groq-${i}-${j}`,date:row.date,endDate:iso(row.endDate)&&row.endDate>=row.date?row.endDate:undefined,eventType:type,title:row.title.slice(0,100),description:typeof row.evidence==='string'?`Source: ${row.evidence.slice(0,300)}`:'Groq extracted',affectsClasses:ambiguous?false:row.affectsClasses===true,sourceInfo:`Page ${i+1}: ${row.evidence??''}`,valid:true});
+   const supported=typeof row.evidence==='string'&&row.evidence.trim().length>0;
+   const affectsClasses=supported&&row.affectsClasses===true;
+   const title=typeof row.shortTitle==='string'&&row.shortTitle.trim()?row.shortTitle.trim():row.title.trim();
+   const evidence=typeof row.evidence==='string'?row.evidence.trim():'';
+   const original=typeof row.originalTitle==='string'?row.originalTitle.trim():row.title.trim();
+   result.calendar.push({id:`groq-${i}-${j}`,date:row.date,endDate:iso(row.endDate)&&row.endDate>=row.date?row.endDate:undefined,eventType:type,title:title.slice(0,100),description:`Original: ${original.slice(0,160)}${evidence?` | Evidence: ${evidence.slice(0,110)}`:''}`,affectsClasses,sourceInfo:`Page ${i+1}: ${evidence}`,valid:true});
+   if(row.affectsClasses===true&&!supported)result.warnings.push(`Page ${i+1}: “${title}” was marked as class-affecting without source evidence; confirm manually.`);
+   if(row.reviewRequired===true)result.warnings.push(`Page ${i+1}: Confirm classification for “${title}”.`);
   }
   if(kind==='timetable' && Array.isArray(payload.groups))for(const g of payload.groups){
    if(typeof g==='string' && /^G\d+$/i.test(g) && !result.groups.includes(g.toUpperCase()))result.groups.push(g.toUpperCase());
