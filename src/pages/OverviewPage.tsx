@@ -165,12 +165,20 @@ export function OverviewPage() {
                 variant="outline"
                 leftIcon={<Sparkles className="h-4 w-4" />}
                 onClick={async () => {
-                  await loadDemoDataset();
-                  showToast({
-                    tone: 'info',
-                    title: 'Demo dataset loaded',
-                    description: '5 sample subjects initialized.',
-                  });
+                  try {
+                    await loadDemoDataset();
+                    showToast({
+                      tone: 'success',
+                      title: 'Demo dataset loaded',
+                      description: `5 sample subjects initialized in ${persistenceMode === 'local' ? 'this browser' : 'your account'}.`,
+                    });
+                  } catch (error) {
+                    showToast({
+                      tone: 'error',
+                      title: 'Could not load demo data',
+                      description: error instanceof Error ? error.message : 'Please try again.',
+                    });
+                  }
                 }}
               >
                 Load Sample Demo Data

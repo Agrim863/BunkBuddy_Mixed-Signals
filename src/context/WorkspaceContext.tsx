@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { SubjectBaselineInput } from '../engine';
-import { createDataRepository, type RepoResult } from '../services/data';
+import { createDataRepository, LocalRepository, type RepoResult } from '../services/data';
 import { getSupabaseClient } from '../services/data/supabaseClient';
 import {
   createEmptyWorkspaceSnapshot,
@@ -119,7 +119,11 @@ interface WorkspaceContextValue {
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
+  // Keep Supabase as the authentication repository, but give signed-out guests
+  // a fully local repository so demo data and guest edits never hit the remote DB.
   const repo = useMemo(() => createDataRepository(), []);
+  const localRepo = useMemo(() => new LocalRepository(), []);
+  const [activeRepo, setActiveRepo] = useState(repo);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot>(
@@ -130,16 +134,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const refreshWorkspace = useCallback(async () => {
     setLoading(true);
     try {
-      const [user, data] = await Promise.all([
-        repo.getCurrentUser(),
-        repo.loadWorkspace(),
-      ]);
+      const user = await repo.getCurrentUser();
+      const selectedRepo = !user && repo.mode === 'supabase' ? localRepo : repo;
+      const data = await selectedRepo.loadWorkspace();
       setCurrentUser(user);
+      setActiveRepo(selectedRepo);
       setSnapshot(data);
     } finally {
       setLoading(false);
     }
-  }, [repo]);
+  }, [repo, localRepo]);
 
   useEffect(() => {
     void refreshWorkspace();
@@ -223,22 +227,22 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const selectSemester = useCallback(
     async (semesterId: string) => {
-      await repo.selectSemester(semesterId);
-      setSnapshot(await repo.loadWorkspace());
+      await activeRepo.selectSemester(semesterId);
+      setSnapshot(await activeRepo.loadWorkspace());
     },
-    [repo],
+    [activeRepo],
   );
 
   const completeOnboarding = useCallback(
     async (payload: OnboardingSubmission): Promise<RepoResult<Semester>> => {
-      const res = await repo.createSemesterFromOnboarding(payload);
+      const res = await activeRepo.createSemesterFromOnboarding(payload);
       if (res.ok) {
-        setSnapshot(await repo.loadWorkspace());
+        setSnapshot(await activeRepo.loadWorkspace());
         setOnboardingOpen(false);
       }
       return res;
     },
-    [repo],
+    [activeRepo],
   );
 
   const updateSemester = useCallback(
@@ -256,19 +260,19 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         >
       >,
     ) => {
-      const res = await repo.updateSemester(semesterId, patch);
-      if (res.ok) setSnapshot(await repo.loadWorkspace());
+      const res = await activeRepo.updateSemester(semesterId, patch);
+      if (res.ok) setSnapshot(await activeRepo.loadWorkspace());
       return res;
     },
-    [repo],
+    [activeRepo],
   );
 
   const deleteSemester = useCallback(
     async (semesterId: string) => {
-      await repo.deleteSemester(semesterId);
-      setSnapshot(await repo.loadWorkspace());
+      await activeRepo.deleteSemester(semesterId);
+      setSnapshot(await activeRepo.loadWorkspace());
     },
-    [repo],
+    [activeRepo],
   );
 
   const addSubject = useCallback(
@@ -276,11 +280,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (!activeSemesterId) {
         return { ok: false, error: 'Create or select a semester first' } as const;
       }
-      const res = await repo.addSubject(activeSemesterId, input);
-      if (res.ok) setSnapshot(await repo.loadWorkspace());
+      const res = await activeRepo.addSubject(activeSemesterId, input);
+      if (res.ok) setSnapshot(await activeRepo.loadWorkspace());
       return res;
     },
-    [repo, activeSemesterId],
+    [activeRepo, activeSemesterId],
   );
 
   const updateSubject = useCallback(
@@ -288,19 +292,19 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       subjectId: string,
       patch: Partial<Omit<Subject, 'id' | 'semesterId' | 'createdAt'>>,
     ) => {
-      const res = await repo.updateSubject(subjectId, patch);
-      if (res.ok) setSnapshot(await repo.loadWorkspace());
+      const res = await activeRepo.updateSubject(subjectId, patch);
+      if (res.ok) setSnapshot(await activeRepo.loadWorkspace());
       return res;
     },
-    [repo],
+    [activeRepo],
   );
 
   const deleteSubject = useCallback(
     async (subjectId: string) => {
-      await repo.deleteSubject(subjectId);
-      setSnapshot(await repo.loadWorkspace());
+      await activeRepo.deleteSubject(subjectId);
+      setSnapshot(await activeRepo.loadWorkspace());
     },
-    [repo],
+    [activeRepo],
   );
 
   const addTimetableEntry = useCallback(
@@ -308,11 +312,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (!activeSemesterId) {
         return { ok: false, error: 'Create or select a semester first' } as const;
       }
-      const res = await repo.addTimetableEntry(activeSemesterId, input);
-      if (res.ok) setSnapshot(await repo.loadWorkspace());
+      const res = await activeRepo.addTimetableEntry(activeSemesterId, input);
+      if (res.ok) setSnapshot(await activeRepo.loadWorkspace());
       return res;
     },
-    [repo, activeSemesterId],
+    [activeRepo, activeSemesterId],
   );
 
   const addTimetableEntriesBulk = useCallback(
@@ -320,11 +324,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (!activeSemesterId) {
         return { ok: false, error: 'Create or select a semester first' } as const;
       }
-      const res = await repo.addTimetableEntriesBulk(activeSemesterId, entries);
-      if (res.ok) setSnapshot(await repo.loadWorkspace());
+      const res = await activeRepo.addTimetableEntriesBulk(activeSemesterId, entries);
+      if (res.ok) setSnapshot(await activeRepo.loadWorkspace());
       return res;
     },
-    [repo, activeSemesterId],
+    [activeRepo, activeSemesterId],
   );
 
   const updateTimetableEntry = useCallback(
@@ -332,19 +336,19 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       entryId: string,
       patch: Partial<Omit<TimetableEntry, 'id' | 'semesterId'>>,
     ) => {
-      const res = await repo.updateTimetableEntry(entryId, patch);
-      if (res.ok) setSnapshot(await repo.loadWorkspace());
+      const res = await activeRepo.updateTimetableEntry(entryId, patch);
+      if (res.ok) setSnapshot(await activeRepo.loadWorkspace());
       return res;
     },
-    [repo],
+    [activeRepo],
   );
 
   const deleteTimetableEntry = useCallback(
     async (entryId: string) => {
-      await repo.deleteTimetableEntry(entryId);
-      setSnapshot(await repo.loadWorkspace());
+      await activeRepo.deleteTimetableEntry(entryId);
+      setSnapshot(await activeRepo.loadWorkspace());
     },
-    [repo],
+    [activeRepo],
   );
 
   const addAttendanceRecord = useCallback(
@@ -352,11 +356,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (!activeSemesterId) {
         return { ok: false, error: 'Create or select a semester first' } as const;
       }
-      const res = await repo.addAttendanceRecord(activeSemesterId, input);
-      if (res.ok) setSnapshot(await repo.loadWorkspace());
+      const res = await activeRepo.addAttendanceRecord(activeSemesterId, input);
+      if (res.ok) setSnapshot(await activeRepo.loadWorkspace());
       return res;
     },
-    [repo, activeSemesterId],
+    [activeRepo, activeSemesterId],
   );
 
   const updateAttendanceRecord = useCallback(
@@ -364,19 +368,19 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       recordId: string,
       patch: Partial<Omit<AttendanceRecord, 'id' | 'semesterId'>>,
     ) => {
-      const res = await repo.updateAttendanceRecord(recordId, patch);
-      if (res.ok) setSnapshot(await repo.loadWorkspace());
+      const res = await activeRepo.updateAttendanceRecord(recordId, patch);
+      if (res.ok) setSnapshot(await activeRepo.loadWorkspace());
       return res;
     },
-    [repo],
+    [activeRepo],
   );
 
   const deleteAttendanceRecord = useCallback(
     async (recordId: string) => {
-      await repo.deleteAttendanceRecord(recordId);
-      setSnapshot(await repo.loadWorkspace());
+      await activeRepo.deleteAttendanceRecord(recordId);
+      setSnapshot(await activeRepo.loadWorkspace());
     },
-    [repo],
+    [activeRepo],
   );
 
   const addCalendarEvent = useCallback(
@@ -384,11 +388,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (!activeSemesterId) {
         return { ok: false, error: 'Create or select a semester first' } as const;
       }
-      const res = await repo.addCalendarEvent(activeSemesterId, input);
-      if (res.ok) setSnapshot(await repo.loadWorkspace());
+      const res = await activeRepo.addCalendarEvent(activeSemesterId, input);
+      if (res.ok) setSnapshot(await activeRepo.loadWorkspace());
       return res;
     },
-    [repo, activeSemesterId],
+    [activeRepo, activeSemesterId],
   );
 
   const addCalendarEventsBulk = useCallback(
@@ -396,11 +400,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (!activeSemesterId) {
         return { ok: false, error: 'Create or select a semester first' } as const;
       }
-      const res = await repo.addCalendarEventsBulk(activeSemesterId, events);
-      if (res.ok) setSnapshot(await repo.loadWorkspace());
+      const res = await activeRepo.addCalendarEventsBulk(activeSemesterId, events);
+      if (res.ok) setSnapshot(await activeRepo.loadWorkspace());
       return res;
     },
-    [repo, activeSemesterId],
+    [activeRepo, activeSemesterId],
   );
 
   const updateCalendarEvent = useCallback(
@@ -408,40 +412,40 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       eventId: string,
       patch: Partial<Omit<CalendarEvent, 'id' | 'semesterId'>>,
     ) => {
-      const res = await repo.updateCalendarEvent(eventId, patch);
-      if (res.ok) setSnapshot(await repo.loadWorkspace());
+      const res = await activeRepo.updateCalendarEvent(eventId, patch);
+      if (res.ok) setSnapshot(await activeRepo.loadWorkspace());
       return res;
     },
-    [repo],
+    [activeRepo],
   );
 
   const deleteCalendarEvent = useCallback(
     async (eventId: string) => {
-      await repo.deleteCalendarEvent(eventId);
-      setSnapshot(await repo.loadWorkspace());
+      await activeRepo.deleteCalendarEvent(eventId);
+      setSnapshot(await activeRepo.loadWorkspace());
     },
-    [repo],
+    [activeRepo],
   );
 
   const updateHistoricalBaselines = useCallback(
     async (semesterId: string, inputs: SubjectBaselineInput[]) => {
-      await repo.updateHistoricalBaselines(semesterId, inputs);
-      setSnapshot(await repo.loadWorkspace());
+      await activeRepo.updateHistoricalBaselines(semesterId, inputs);
+      setSnapshot(await activeRepo.loadWorkspace());
     },
-    [repo],
+    [activeRepo],
   );
 
   const loadDemoDataset = useCallback(async () => {
-    setSnapshot(await repo.loadDemoDataset());
-  }, [repo]);
+    setSnapshot(await activeRepo.loadDemoDataset());
+  }, [activeRepo]);
 
   const clearAllData = useCallback(async () => {
-    setSnapshot(await repo.clearAllData());
-  }, [repo]);
+    setSnapshot(await activeRepo.clearAllData());
+  }, [activeRepo]);
 
   const value: WorkspaceContextValue = {
     loading,
-    persistenceMode: repo.mode,
+    persistenceMode: activeRepo.mode,
     currentUser,
     semesters: snapshot.semesters,
     activeSemester,
