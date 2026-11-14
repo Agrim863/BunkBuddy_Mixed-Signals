@@ -21,4 +21,3 @@ A React and TypeScript frontend using Vite, with a reusable attendance calculati
 3. Implement the dashboard, timetable, attendance tracking, and onboarding screens.
 4. Add simulation, analytics, import tools, and regression tests.
 
-> This first commit documents the project direction. The application will be added in subsequent commits.
