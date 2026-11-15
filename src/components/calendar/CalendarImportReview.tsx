@@ -23,7 +23,10 @@ export const EVENT_TYPE_LABELS: Record<CalendarEventType, string> = {
   cancelled_class: 'Cancelled Class',
 };
 
+type CalendarImportMode = 'academic' | 'holidays';
+
 interface CalendarImportReviewProps {
+  mode?: CalendarImportMode;
   onConfirmImport: (
     events: Array<{
       date: string;
@@ -36,7 +39,7 @@ interface CalendarImportReviewProps {
   ) => void;
 }
 
-export function CalendarImportReview({ onConfirmImport }: CalendarImportReviewProps) {
+export function CalendarImportReview({ onConfirmImport, mode = 'academic' }: CalendarImportReviewProps) {
   const [loading, setLoading] = useState(false);
   const [aiWarnings,setAiWarnings] = useState<string[]>([]);
   const [progress, setProgress] = useState('');
@@ -94,7 +97,7 @@ export function CalendarImportReview({ onConfirmImport }: CalendarImportReviewPr
         setReviewRows(ai.calendar);
         setSelectedIds(new Set(ai.calendar.map(d => d.id)));
         setAiWarnings(ai.warnings);
-        if (!ai.calendar.length) setErrorMsg('No valid academic events found. Check the PDF and try again.');
+        if (!ai.calendar.length) setErrorMsg(mode === 'holidays' ? 'No valid holiday dates found. Check the PDF and try again.' : 'No valid academic events found. Check the PDF and try again.');
       } else {
         setErrorMsg('Unsupported file format. Please upload a .pdf, .csv, or .xlsx file.');
       }
@@ -136,10 +139,10 @@ export function CalendarImportReview({ onConfirmImport }: CalendarImportReviewPr
       .map((r) => ({
         date: r.date,
         endDate: r.endDate,
-        eventType: r.eventType,
+        eventType: mode === 'holidays' ? 'official_holiday' as const : r.eventType,
         title: r.title.trim(),
         description: r.description,
-        affectsClasses: r.affectsClasses,
+        affectsClasses: mode === 'holidays' ? true : r.affectsClasses,
       }));
 
     if (toSave.length === 0) {
@@ -163,12 +166,16 @@ export function CalendarImportReview({ onConfirmImport }: CalendarImportReviewPr
     <div className="space-y-4 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface-well)] p-4">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <h4 className="text-sm font-semibold text-[var(--text-main)]">
-            Import Academic Calendar (PDF, Excel, CSV)
-          </h4>
-          <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-            Extracted events appear in a review table below before being saved.
-          </p>
+          <div>
+            <h4 className="text-sm font-semibold text-[var(--text-main)]">
+              {mode === 'holidays' ? 'Import College Holiday List (PDF, Excel, CSV)' : 'Import Academic Calendar (PDF, Excel, CSV)'}
+            </h4>
+            <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+              {mode === 'holidays'
+                ? 'Upload the separate holiday circular/list. Reviewed dates are saved as official holidays and marked as no-class days.'
+                : 'Extracted academic events appear in a review table below before being saved.'}
+            </p>
+          </div>
         </div>
 
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-[10px] border border-[var(--primary)]/40 bg-[var(--primary)]/10 px-3.5 py-2 text-xs font-semibold text-[var(--primary)] transition-all duration-150 hover:border-[var(--primary)] hover:bg-[var(--primary)]/20">
@@ -324,6 +331,9 @@ export function CalendarImportReview({ onConfirmImport }: CalendarImportReviewPr
                       />
                     </td>
                     <td className="px-3 py-2">
+                      {mode === 'holidays' ? (
+                        <Badge variant="warning">Official Holiday</Badge>
+                      ) : (
                       <select
                         value={row.eventType}
                         onChange={(e) => {
@@ -341,18 +351,23 @@ export function CalendarImportReview({ onConfirmImport }: CalendarImportReviewPr
                           </option>
                         ))}
                       </select>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       <label className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-                        <input
-                          type="checkbox"
-                          checked={row.affectsClasses}
-                          onChange={(e) =>
-                            updateDraft(row.id, { affectsClasses: e.target.checked })
-                          }
-                          className="h-3.5 w-3.5 rounded border-[var(--border-subtle)] accent-[var(--primary)]"
-                        />
-                        <span>Skips classes</span>
+                        {mode === 'holidays' ? (
+                          <span className="font-medium text-[var(--status-warning)]">Yes</span>
+                        ) : (
+                          <>
+                            <input
+                              type="checkbox"
+                              checked={row.affectsClasses}
+                              onChange={(e) => updateDraft(row.id, { affectsClasses: e.target.checked })}
+                              className="h-3.5 w-3.5 rounded border-[var(--border-subtle)] accent-[var(--primary)]"
+                            />
+                            <span>Skips classes</span>
+                          </>
+                        )}
                       </label>
                     </td>
                     <td className="px-3 py-2">

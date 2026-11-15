@@ -97,14 +97,33 @@ export function Step3AcademicCalendar({ draft, onChange }: Step3AcademicCalendar
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="text-base font-bold text-[var(--text-main)]">Academic Calendar</h3>
+        <h3 className="text-base font-bold text-[var(--text-main)]">College Calendar & Holidays</h3>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Add holidays, semester breaks, exams, college events, or non-teaching days manually or via PDF/Excel/CSV upload.
+          Both documents are optional. Some colleges provide only a holiday list, while others may not publish an academic calendar at all. Skip either section if you do not have the document; you can add dates later.
         </p>
       </div>
 
-      {/* File upload + review workflow */}
-      <CalendarImportReview onConfirmImport={handleConfirmedImport} />
+      <section className="space-y-3 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface-well)] p-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-sm font-semibold text-[var(--text-main)]">Academic Calendar</h4>
+            <Badge variant="neutral">Optional</Badge>
+          </div>
+          <p className="mt-1 text-xs text-[var(--text-secondary)]">For semester breaks, examination periods, college events, and other academic dates.</p>
+        </div>
+        <CalendarImportReview mode="academic" onConfirmImport={handleConfirmedImport} />
+      </section>
+
+      <section className="space-y-3 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface-well)] p-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-sm font-semibold text-[var(--text-main)]">College Holiday List</h4>
+            <Badge variant="neutral">Optional</Badge>
+          </div>
+          <p className="mt-1 text-xs text-[var(--text-secondary)]">For a separate holiday circular/list issued by your college. Imported dates are automatically classified as official holidays.</p>
+        </div>
+        <CalendarImportReview mode="holidays" onConfirmImport={handleConfirmedImport} />
+      </section>
 
       {/* Manual Holiday / Event Entry */}
       <div className="space-y-3 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface-well)] p-4">
