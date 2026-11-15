@@ -59,9 +59,10 @@ function AppEntry() {
     );
   }
 
-  // Supabase users must authenticate before entering their cloud workspace.
-  // Local mode continues to open the existing app without forcing sign-in.
-  if (persistenceMode === 'supabase' && !currentUser) {
+  // Authentication is mandatory. LocalRepository supplies a synthetic
+  // "Local Student" profile for offline development, not a real login.
+  // Never let that synthetic profile unlock the application.
+  if (persistenceMode !== 'supabase' || !currentUser) {
     return <LandingPage />;
   }
 
