@@ -1,9 +1,10 @@
 import { ShellProvider, useShell } from './context/ShellContext';
 import { SimulationProvider } from './context/SimulationContext';
-import { WorkspaceProvider } from './context/WorkspaceContext';
+import { WorkspaceProvider, useWorkspace } from './context/WorkspaceContext';
 import { ToastProvider } from './components/ui';
 import { AppShell } from './components/layout/AppShell';
 import { OnboardingWizardModal } from './components/onboarding/OnboardingWizardModal';
+import { LandingPage } from './components/auth/LandingPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { MyAttendancePage } from './pages/MyAttendancePage';
 import { BunkSimulatorPage } from './pages/BunkSimulatorPage';
@@ -44,16 +45,43 @@ function ActiveRouteView() {
   );
 }
 
+function AppEntry() {
+  const { loading, currentUser, persistenceMode } = useWorkspace();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0d0e10] text-[#f7f7f5]">
+        <div className="flex items-center gap-3 text-sm text-white/65">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#a9bba5]" />
+          Preparing your BunkBuddy workspace…
+        </div>
+      </div>
+    );
+  }
+
+  // Supabase users must authenticate before entering their cloud workspace.
+  // Local mode continues to open the existing app without forcing sign-in.
+  if (persistenceMode === 'supabase' && !currentUser) {
+    return <LandingPage />;
+  }
+
+  return (
+    <>
+      <AppShell>
+        <ActiveRouteView />
+      </AppShell>
+      <OnboardingWizardModal />
+    </>
+  );
+}
+
 export function App() {
   return (
     <ToastProvider>
       <WorkspaceProvider>
         <SimulationProvider>
           <ShellProvider>
-            <AppShell>
-              <ActiveRouteView />
-            </AppShell>
-            <OnboardingWizardModal />
+            <AppEntry />
           </ShellProvider>
         </SimulationProvider>
       </WorkspaceProvider>
